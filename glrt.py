@@ -30,33 +30,43 @@ def blind_channel_estimation(received_signal):
     sigma2_est = 1 # np.var(received_signal) - alpha_est**2
     return alpha_est, theta_est, sigma2_est
 
-def Likelihood_GLRT(samples, alpha_est, theta_est, sigma2_est):
-    return
+def Likelihood_glrt(r, alpha, theta, sigma2, alphabet):
+    """ Calcule la GLRT Joint likelihood pour des échantillons r et un alphabet 
+     \n avec les paramètres estimé du canal """
+    fading = alpha*np.exp(-1j*theta)
+    cste = 1/(len(alphabet)*2*np.pi*sigma2)
+    sum = []
+    prod = []
+    for n in len(r) :
+        for Am in alphabet:
+            sum.append(np.exp(-(np.abs(r[n] - fading*Am) ** 2)/(2*sigma2)))
+        prod.append(np.sum(sum)*cste)
+    return np.prod(prod)
 
 
-def glrt_classification(received_signal, M_list, alpha_est, theta_est, sigma2_est):
+def glrt_classification(received_signal, alphabet):
     """ Appliquer GLRT pour classifier la modulation """
-    fading = alpha_est*np.exp(-1j*theta_est)
-
-    likelihoods = []
-    for m in M_list:
-        _, samples = generate_mpsk_samples(m, len(received_signal))
-        phase_hypothesis = 2 * np.pi * samples / m
-        candidate_signals = np.exp(1j * phase_hypothesis)
-        
-        cste = 1/(m*2*np.pi*sigma2)
-        likelihood = cste*np.sum(np.exp(-(np.abs(received_signal - fading*candidate_signals) ** 2))/(2*sigma2_est))
-        likelihoods.append(likelihood)
-    return M_list[np.argmin(likelihoods)]
+    # estimation
+    # likelihood
+    # max likelyhood 
+    
+    return 
 
 # Paramètres
 M_list = [2, 4, 8]  # BPSK, QPSK, 8-PSK
 M_true = 4  # Modulation réelle
 N = 1000  # Nombre d'échantillon
-SNR_dB = 10  # Rapport Signal/Bruit
+SNR_dB = 12  # Rapport Signal/Bruit
 
 # Générer un signal M-PSK
 signal, true_samples = generate_mpsk_samples(M_true, N)
+
+# Générer l'alphabet
+Alphabet=[]
+for m in M_list:
+    i = np.arange(m)
+    am = np.array(np.exp(1j * 2 * np.pi * i / m ))
+    Alphabet.append(am)
 
 # Propagation dans un canal de fading
 faded_signal, alpha, theta = apply_fading_channel(signal)
@@ -68,15 +78,18 @@ received_signal, sigma2 = add_awgn(faded_signal, SNR_dB)
 alpha_est, theta_est, sigma2_est = blind_channel_estimation(received_signal)
 print(f"Estimation: alpha={alpha_est}, theta={theta_est}, sigma2={sigma2_est}")
 
-# Classification avec GLRT
-M_and_fade_estimated = glrt_classification(received_signal, M_list,alpha_est, theta_est, sigma2_est)
-M_estimated          = glrt_classification(received_signal, M_list,alpha    , theta    , sigma2)
-
+# # Classification avec GLRT
+M_and_fade_estimated = glrt_classification(received_signal, Alphabet) #,alpha_est, theta_est, sigma2_est)
+M_estimated          = glrt_classification(received_signal, Alphabet) #,alpha    , theta    , sigma2)
+print(f"Modulation et fading estimée: {M_and_fade_estimated}-PSK")
 print(f"Modulation estimée: {M_estimated}-PSK")
 
 plt.figure(figsize=(8, 8))
+
 plt.scatter(received_signal.real, received_signal.imag, color='blue', alpha=0.5, label=f'Symboles reçus\n Modulation estimée: {M_and_fade_estimated}-PSK (fade) \n Modulation estimée: {M_estimated}-PSK')
 plt.scatter(signal.real,signal.imag,color='red', marker='x', label=f'Symboles idéaux {M_true}-PSK')
+plt.scatter(Alphabet[1].real,Alphabet[1].imag,color='green', marker='o',alpha=0.8, label=f'Alphabet')
+
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.axhline(0, color='black', linewidth=1)
 plt.axvline(0, color='black', linewidth=1)
