@@ -9,13 +9,13 @@ def generate_mpsk_samples(M, N):
     return np.exp(1j * phase), samples
 
 def apply_fading_channel(signal):
-    """ Simuler un canal de Rayleigh """
+    """ Simuler du fading """
     alpha = 0.8 # np.random.uniform(0.25,1)
     theta = np.pi/3 #np.random.uniform(0,2*np.pi)
     return signal * alpha * np.exp(-1j * theta), alpha, theta
 
 def add_awgn(signal, snr_db):
-    """ Ajouter du bruit AWGN """
+    """ Ajouter du bruit """
     snr_linear = 10 ** (snr_db / 10)
     power_signal = np.mean(np.abs(signal)**2)
     noise_power = power_signal / snr_linear
@@ -30,8 +30,8 @@ def blind_channel_estimation(received_signal):
     sigma2_est = 1 # np.var(received_signal) - alpha_est**2
     return alpha_est, theta_est, sigma2_est
 
-def Likelihood_glrt(r, alpha, theta, sigma2, alphabet):
-    """ Calcule la GLRT Joint likelihood pour des échantillons r et un alphabet 
+def Joint_Likelihood(r, alpha, theta, sigma2, alphabet):
+    """ Calcule Joint likelihood pour des échantillons r et un alphabet 
      \n avec les paramètres estimé du canal """
     fading = alpha*np.exp(-1j*theta)
     cste = 1/(len(alphabet)*2*np.pi*sigma2)
@@ -43,8 +43,14 @@ def Likelihood_glrt(r, alpha, theta, sigma2, alphabet):
         prod.append(np.sum(sum)*cste)
     return np.prod(prod)
 
+def glrt_Likelihood(r, alphas, thetas, sigma2s, alphabet):
+    """ Calcule la GLRT likelihood """
+    likelihoodS = []
+    for i in range(len(alphas)) :
+        likelihoodS.append(Joint_Likelihood(r, alphas, thetas, sigma2s, alphabet))
+    return np.max(likelihoodS)
 
-def glrt_classification(received_signal, alphabet):
+def glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est ):
     """ Appliquer GLRT pour classifier la modulation """
     # estimation
     # likelihood
@@ -79,8 +85,8 @@ alpha_est, theta_est, sigma2_est = blind_channel_estimation(received_signal)
 print(f"Estimation: alpha={alpha_est}, theta={theta_est}, sigma2={sigma2_est}")
 
 # # Classification avec GLRT
-M_and_fade_estimated = glrt_classification(received_signal, Alphabet) #,alpha_est, theta_est, sigma2_est)
-M_estimated          = glrt_classification(received_signal, Alphabet) #,alpha    , theta    , sigma2)
+M_and_fade_estimated = None # glrt_classification(received_signal, Alphabet) #,alpha_est, theta_est, sigma2_est)
+M_estimated          = None # glrt_classification(received_signal, Alphabet) #,alpha    , theta    , sigma2)
 print(f"Modulation et fading estimée: {M_and_fade_estimated}-PSK")
 print(f"Modulation estimée: {M_estimated}-PSK")
 
