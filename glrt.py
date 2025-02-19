@@ -33,9 +33,9 @@ def Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation):
      \n avec les paramètres estimé du canal """
     fading = alpha*np.exp(-1j*theta)
     cste = 1/(len(symboles_modulation)*2*np.pi*sigma2)
-    sum = []
     prod = []
     for n in range(len(r)) :
+        sum = []
         for Am in symboles_modulation:
             sum.append(np.exp(-(np.abs(r[n] - fading*Am) ** 2)/(2*sigma2)))
         prod.append(np.sum(sum)*cste)
@@ -60,9 +60,6 @@ def glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_
 
 # Paramètres
 Mod_list = {"2PSK": 2, "4PSK" : 4,"8PSK" : 8}  # BPSK, QPSK, 8-PSK
-M_true = 4  # Modulation réelle
-N = 100  # Nombre d'échantillon
-SNR_dB = 16 # Rapport Signal/Bruit
 
 # Générer l'alphabet de références de modulation
 Alphabet={}
@@ -72,9 +69,8 @@ for mod in Mod_list:
     am = np.array(np.exp(1j * 2 * np.pi * i / order ))
     Alphabet[mod] = am
 
-
 # # Classification avec GLRT
-def test_mono(M_true, N, SNR_dB, plots = False):
+def test_GLRT(M_true, N, SNR_dB, plots = False):
     """Test PSK"""
     # Générer un signal M-PSK
     signal, true_samples = generate_mpsk_samples(M_true, N)
@@ -86,9 +82,9 @@ def test_mono(M_true, N, SNR_dB, plots = False):
     received_signal, true_sigma2 = add_awgn(faded_signal, SNR_dB)
 
     # Estimation aveugle des paramètres du canal
-    alpha_est = np.random.uniform(0.25,1, size=10)
-    theta_est = np.random.uniform(0,2*np.pi, size=10)
-    sigma2_est = np.random.uniform(0.1,2, size=10)
+    alpha_est = [true_alpha] # np.random.uniform(0.25,1, size=10)
+    theta_est = [true_theta] # np.random.uniform(0,2*np.pi, size=10)
+    sigma2_est = [true_sigma2] # np.random.uniform(0.1,2, size=10)
 
     M_estimated = glrt_classification(received_signal, Alphabet, alpha_est, theta_est, sigma2_est)
 
@@ -116,9 +112,30 @@ def test_mono(M_true, N, SNR_dB, plots = False):
     else :
         return False
 
-def proba_erreur(SNR_dB,plots = False):
-    return
+def taux_erreur(Mtrue,  SNRs_dB, N_symboles = 100, N_test = 100, plots = False):
+    Tes = []
+    for SNR_dB in SNRs_dB :
+        Te = 0
+        for i in range(N_test):
+            correct_classification = test_GLRT(Mtrue, N_symboles, SNR_dB)
+            if not correct_classification :
+                Te = Te + 1
+        Tes.append(Te / N_test)
+        print(SNR_dB)
+    
+    # Tracer le taux d'erreur en fonction du SNR
+    if plots:
+        plt.figure()
+        plt.plot(SNRs_dB, Tes, marker='o', linestyle='-')
+        plt.xlabel("SNR (dB)")
+        plt.ylabel("Taux d'erreur de classification")
+        plt.title(f"Taux d'erreur pour {Mtrue}-PSK")
+        plt.grid()
+    return Tes
 
-test_mono(M_true, N, SNR_dB, True)
-
+M_true = 8  # Modulation réelle
+N = 1000  # Nombre d'échantillon
+SNR_dB = 15 # Rapport Signal/Bruit
+# test_GLRT(M_true, N, SNR_dB, True)
+taux_erreur(M_true, [i for i in range(8,21,2)], N, 200, True)
 plt.show()
