@@ -150,6 +150,28 @@ for mod in QAM_Mod_list:
     qam_Alphabet[mod] = Am
 
 
+def plot_mod(Mod,alphabet):
+    
+    if Mod.find("PSK") != -1:
+        lim = 2
+    
+    if Mod.find("QAM") != -1 :
+       m = int(Mod[:-3])
+       lim = np.log2(m)
+
+    plt.figure(figsize=(8, 8))
+    plt.scatter(alphabet[Mod].real,alphabet[Mod].imag,color='green', marker='o',alpha=0.8, label=f'{Mod}')
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.axhline(0, color='black', linewidth=1)
+    plt.axvline(0, color='black', linewidth=1)
+    plt.xlim(- lim, lim )
+    plt.ylim(- lim, lim )
+    plt.title(f"AMR M-PSK")
+    plt.xticks(fontsize = 14)
+    plt.yticks(fontsize = 14)
+    plt.xlabel("In-Phase (I)", fontsize=16)
+    plt.ylabel("Quadrature (Q)", fontsize=16)
+    plt.legend()
 
 # # Classification avec GLRT
 def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
@@ -222,9 +244,12 @@ def taux_erreur(Ms_true,  SNRs_dB, N_echantillons = 100, N_test = 100):
     plt.grid()
     return Tes
 
-M_true = "16QAM"  
+ALPHABET = {**pskAlphabet, **qam_Alphabet}
+M_true = "8PSK"  
 Ne = 500  # Nombre d'échantillon
-SNR_dB = 16 
-test_GLRT(M_true, Ne, SNR_dB,pskAlphabet, True)
+SNR_dB = 16
+a = test_GLRT(M_true, Ne, SNR_dB,ALPHABET, True)
+print(a)
+plot_mod("64QAM",ALPHABET)
 #taux_erreur([4], [i for i in range(4,21,3)], Ne, 50)
 plt.show()
