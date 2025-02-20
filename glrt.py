@@ -175,13 +175,13 @@ def plot_mod(Mod,alphabet):
 
 # # Classification avec GLRT
 def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
-    """Test PSK"""
-    # Générer un signal M-PSK
-    if Mod_true.find("PSK"):
+
+    if Mod_true.find("PSK") != -1:
         m = int(Mod_true[:-3])
         lim = 2
         signal, true_samples = generate_mpsk_samples(m, N)
-    if Mod_true.find("QAM"):
+    
+    if Mod_true.find("QAM") != -1 :
        m = int(Mod_true[:-3])
        lim = np.log2(m)
        signal, true_samples = generate_mqam_samples(m, N)
@@ -193,8 +193,8 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
     received_signal, true_sigma2 = add_awgn(faded_signal, SNR_dB)
 
     # Estimation aveugle des paramètres du canal
-    alpha_est = [1] #np.random.uniform(0.25,1, size=10)
-    theta_est = [0] #np.random.uniform(0,2*np.pi, size=10)
+    alpha_est = [true_alpha] #np.random.uniform(0.25,1, size=10)
+    theta_est = [true_theta] #np.random.uniform(0,2*np.pi, size=10)
     sigma2_est =  [true_sigma2] #np.random.uniform(0.1,2, size=10)
 
     M_estimated = glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est)
