@@ -27,26 +27,26 @@ def blind_channel_estimation(received_signal):
     """ Estimer les paramètres du canal sans connaître le signal transmis """
     return
 
-def Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation):
+def Log_Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation):
     """ Eq (3.3) 
-    \n Calcule la Joint likelihood pour des échantillons r et une modulation a tester  
+    \n Calcule la Log Joint likelihood pour des échantillons r et une modulation a tester  
      \n avec les paramètres estimé du canal """
     fading = alpha*np.exp(-1j*theta)
-    cste = 1/(len(symboles_modulation)*2*np.pi*sigma2)
-    prod = []
+    log_cste = -np.log(len(symboles_modulation)*2*np.pi*sigma2)
+    log_L = []
     for n in range(len(r)) :
         sum = []
         for Am in symboles_modulation:
-            sum.append(np.exp(-(np.abs(r[n] - fading*Am) ** 2)/(2*sigma2)))
-        prod.append(np.sum(sum)*cste)
-    return np.prod(prod)
+            sum.append( np.exp( -( np.abs(r[n] - fading*Am) ** 2 )/(2*sigma2) ) )
+        log_L.append(np.log(np.sum(sum))+log_cste)
+    return np.sum(log_L)
 
 def glrt_Likelihood(r, alphas, thetas, sigma2s, symboles_modulation):
     """ Eq (3.22) \n 
     Calcule la GLRT likelihood """    
     Joint_likelihoods = []
     for i in range(len(alphas)) :
-        Joint_likelihoods.append(Joint_Likelihood(r, alphas[i], thetas[i], sigma2s[i], symboles_modulation))
+        Joint_likelihoods.append(Log_Joint_Likelihood(r, alphas[i], thetas[i], sigma2s[i], symboles_modulation))
     return np.max(Joint_likelihoods)
 
 def glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est ):
