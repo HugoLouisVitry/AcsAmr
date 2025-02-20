@@ -112,16 +112,19 @@ def test_GLRT(M_true, N, SNR_dB, plots = False):
     else :
         return False
 
-def taux_erreur(Mtrue,  SNRs_dB, N_symboles = 100, N_test = 100, plots = False):
-    Tes = []
-    for SNR_dB in SNRs_dB :
-        Te = 0
-        for i in range(N_test):
-            correct_classification = test_GLRT(Mtrue, N_symboles, SNR_dB)
-            if not correct_classification :
-                Te = Te + 1
-        Tes.append(Te / N_test)
-        print(SNR_dB)
+def taux_erreur(Ms_true,  SNRs_dB, N_echantillons = 100, N_test = 100):
+    plt.figure()
+    for m_test in Ms_true : 
+        Tes = []
+        for SNR_dB in SNRs_dB :
+            Te = 0
+            for _ in range(N_test):
+                correct_classification = test_GLRT(m_test, N_echantillons, SNR_dB)
+                if not correct_classification :
+                    Te = Te + 1
+            Tes.append(Te / N_test)
+        plt.plot(SNRs_dB, Tes, marker='o', linestyle='-' , label=f"{m_test}-PSK")
+    
     
     # Tracer le taux d'erreur en fonction du SNR
     if plots:
