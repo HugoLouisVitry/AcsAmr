@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def generate_mpsk_samples(M, N):
-    """ Générer des échantillons M-PSK """
+    """ Générer des échantillons M-PSK aléatoires """
     samples = np.random.randint(0, M, N)
     phase = 2 * np.pi * samples / M
     return np.exp(1j * phase), samples
@@ -58,7 +58,7 @@ for mod in psk_Mod_list:
     pskAlphabet[mod] = am
 
 # Paramètres pour les différentes modulations QAM
-QAM_Mod_list = {"4QAM": 4, "8QAM": 8, "16QAM": 16, "32QAM": 32, "64QAM": 64}
+QAM_Mod_list = {"4QAM": 4, "8QAM": 8, "16QAM": 16}#, "32QAM": 32, "64QAM": 64}
 
 # Générer l'alphabet de référence pour QAM
 qam_Alphabet = {}
@@ -114,7 +114,7 @@ def plot_mod(Mod,alphabet):
     plt.axvline(0, color='black', linewidth=1)
     plt.xlim(- lim, lim )
     plt.ylim(- lim, lim )
-    plt.title(f"AMR M-PSK")
+    plt.title(f"AMR {Mod}")
     plt.xticks(fontsize = 14)
     plt.yticks(fontsize = 14)
     plt.xlabel("In-Phase (I)", fontsize=16)
@@ -124,4 +124,7 @@ def plot_mod(Mod,alphabet):
 ALPHABET = {**pskAlphabet, **qam_Alphabet}
 MODLIST = list(psk_Mod_list)+list(QAM_Mod_list)
 
-plot_mod("64QAM",ALPHABET)
+if __name__ == "__main__":
+    plot_mod("8PSK",ALPHABET)
+    plot_mod("8QAM",ALPHABET)
+    plt.show()
