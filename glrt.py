@@ -77,8 +77,11 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
     received_signal, true_sigma2 = add_awgn(faded_signal, SNR_dB)
 
     # Estimation aveugle des paramètres du canal
-    alpha_est  = [1]                    # np.linspace(0.25,1, 20) # [true_alpha for _ in range(20)] # 
-    theta_est  = [0]           # for _ in range(20)]  # np.linspace(0,2*np.pi,20) #[true_theta for _ in range(100)] #
+    # Utiliser les "true" parameters pour avoir l'effet d'une estimation correcte
+    # Utiliser une constante pour simuler une erreur d'estimation 
+    
+    alpha_est  = [1] # np.linspace(0.25,1, 20) # [true_alpha] # 
+    theta_est  = [0] # for _ in range(20)]  # np.linspace(0,2*np.pi,20) #[true_theta] #
     sigma2_est = [true_sigma2]          # for _ in range(20)] # np.arange(0.001,1000, 1000)
 
     M_estimated = glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est)
