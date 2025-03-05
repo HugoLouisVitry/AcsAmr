@@ -4,24 +4,6 @@ import matplotlib.pyplot as plt
 from time import time
 from modulation import *
 
-def apply_fading_channel(signal):
-    """ Simuler du fading """
-    alpha =  np.random.uniform(0.25,1)
-    theta =  np.random.uniform(0,2*np.pi)
-    return signal * alpha * np.exp(-1j * theta), alpha, theta
-
-def add_awgn(signal, snr_db):
-    """ Ajouter du bruit """
-    snr_linear = 10 ** (snr_db / 10)
-    power_signal = np.mean(np.abs(signal)**2)
-    noise_power = power_signal / snr_linear
-    noise = np.sqrt(noise_power/2) * (np.random.randn(*signal.shape) + 1j * np.random.randn(*signal.shape))
-    return signal + noise, noise_power
-
-def blind_channel_estimation(received_signal):
-    """ Estimer les paramètres du canal sans connaître le signal transmis """
-    return
-
 def Log_Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation):
     """ Eq (3.3/3.4) 
     \n Calcule la Log Joint likelihood pour des échantillons r et une modulation a tester  

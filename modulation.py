@@ -38,7 +38,7 @@ def generate_mqam_samples(M, N):
         ])
 
     # Normalisation de l'énergie moyenne à 1
-    #alphabet /= np.sqrt((np.abs(alphabet) ** 2).mean())
+    alphabet /= np.sqrt((np.abs(alphabet) ** 2).mean())
 
     # Générer des échantillons aléatoires
     indices = np.random.randint(0, len(alphabet), N)
@@ -94,7 +94,7 @@ for mod in QAM_Mod_list:
         ])
 
     # Normaliser l'énergie moyenne à 1
-    #Am /= np.sqrt((np.abs(Am) ** 2).mean())
+    Am /= np.sqrt((np.abs(Am) ** 2).mean())
 
     qam_Alphabet[mod] = Am
 
@@ -107,8 +107,8 @@ def plot_mod(Mod,alphabet):
        m = int(Mod[:-3])
        lim = np.log2(m)
 
-    plt.figure(figsize=(8, 8))
-    plt.scatter(alphabet[Mod].real,alphabet[Mod].imag,color='green', marker='o',alpha=0.8, label=f'{Mod}')
+    # plt.figure(figsize=(8, 8))
+    plt.scatter(alphabet[Mod].real,alphabet[Mod].imag, marker='o',alpha=0.8, label=f'{Mod}')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.axhline(0, color='black', linewidth=1)
     plt.axvline(0, color='black', linewidth=1)
@@ -121,10 +121,58 @@ def plot_mod(Mod,alphabet):
     plt.ylabel("Quadrature (Q)", fontsize=16)
     plt.legend()
 
+def apply_fading_channel(signal, alpha=1.0, theta=0.0):
+    """ Simuler du fading """
+    return signal * alpha * np.exp(-1j * theta), alpha, theta
+
+def add_awgn(signal, snr_db):
+    """ Ajouter du bruit """
+    snr_linear = 10 ** (snr_db / 10)
+    power_signal = np.mean(np.abs(signal)**2)
+    noise_power = power_signal / snr_linear
+    noise = np.sqrt(noise_power/2) * (np.random.randn(*signal.shape) + 1j * np.random.randn(*signal.shape))
+    return signal + noise, noise_power
+
 ALPHABET = {**pskAlphabet, **qam_Alphabet}
 MODLIST = list(psk_Mod_list)+list(QAM_Mod_list)
 
+def plot_awgn(mod, SNR = 15 ,N = 500):
+    
+    if mod.find("PSK") != -1:
+        m = int(mod[:-3])
+        lim = 2
+        signal, true_samples = generate_mpsk_samples(m, N)
+    
+    if mod.find("QAM") != -1 :
+       m = int(mod[:-3])
+       lim = np.log2(m)
+       signal, true_samples = generate_mqam_samples(m, N)
+    
+    received_signal, _ = add_awgn(signal,SNR)
+
+    # plt.figure(figsize=(8, 8))
+    plt.scatter(received_signal.real, received_signal.imag, alpha=0.2, label=f'Symboles reçus\n ')
+
+    return
 if __name__ == "__main__":
-    plot_mod("8PSK",ALPHABET)
+    SNR = 15
+    plt.figure(figsize=(8, 8))
+    plot_mod("4QAM",ALPHABET)
     plot_mod("8QAM",ALPHABET)
+    plot_mod("16QAM",ALPHABET)
+    samp,_=generate_mqam_samples(16,200)
+    samp,_ = add_awgn(samp,20)
+    plt.scatter(samp.real,samp.imag, alpha=0.2)
+
+    # plt.figure(figsize=(8, 8))
+    # plot_mod("2PSK",ALPHABET)
+    # plot_mod("4PSK",ALPHABET)
+    # plot_mod("8PSK",ALPHABET)
+    
+    # plt.figure(figsize=(8, 8))
+    # plot_awgn("16QAM", SNR)
+    # plot_awgn("8PSK", SNR)
+    # plot_awgn("4PSK", SNR)
+    
+    plt.legend()
     plt.show()
