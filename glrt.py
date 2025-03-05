@@ -10,23 +10,26 @@ def Log_Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation):
      \n avec les paramètres estimé du canal """
     fading = alpha*np.exp(-1j*theta)
     log_cste = -np.log(len(symboles_modulation)*2*np.pi*sigma2)
-    log_L = []
+    joint_log_L = 0
     for n in range(len(r)) :
-        sum = []
+        sum = 0
         for Am in symboles_modulation:
-            t = np.exp( -( np.abs(r[n] - fading*Am) ** 2 )/(2*sigma2) )
-            sum.append(t)
-        logsum= np.log(np.sum(sum))
-        log_L.append((logsum)+log_cste)
-    return np.sum(log_L)
+            sum += np.exp( -( np.abs(r[n] - fading*Am) ** 2 )/(2*sigma2) )
+        logsum= np.log(sum)
+        joint_log_L += logsum + log_cste
+    return joint_log_L
 
 def glrt_Likelihood(r, alphas, thetas, sigma2s, symboles_modulation):
     """ Eq (3.22) \n 
     Calcule la GLRT likelihood """    
-    Joint_likelihoods = []
-    for i in range(len(alphas)) :
-        Joint_likelihoods.append(Log_Joint_Likelihood(r, alphas[i], thetas[i], sigma2s[i], symboles_modulation))
-    return np.max(Joint_likelihoods)
+    MaxJointLikelihoods = -np.inf
+    for alpha in alphas:
+        for sigma2 in sigma2s:
+            for theta in thetas:
+                Jlikelihood = Log_Joint_Likelihood(r, alpha, theta, sigma2, symboles_modulation)
+                if Jlikelihood > MaxJointLikelihoods:
+                    MaxJointLikelihoods = Jlikelihood
+    return MaxJointLikelihoods
 
 def glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est ):
     """Eq (3.13) \n 
@@ -53,6 +56,8 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
        signal, true_samples = generate_mqam_samples(m, N)
 
     # Propagation dans un canal de fading
+    alpha =  np.random.uniform(0.25,1)
+    theta =  np.random.uniform(0,2*np.pi)
     faded_signal, true_alpha, true_theta = apply_fading_channel(signal)
 
     # Ajouter du bruit AWGN
@@ -62,9 +67,9 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
     # Utiliser les "true" parameters pour avoir l'effet d'une estimation correcte
     # Utiliser une constante pour simuler une erreur d'estimation 
     
-    alpha_est  = [1] # np.linspace(0.25,1, 20) # [true_alpha] # 
-    theta_est  = [0] # for _ in range(20)]  # np.linspace(0,2*np.pi,20) #[true_theta] #
-    sigma2_est = [true_sigma2]          # for _ in range(20)] # np.arange(0.001,1000, 1000)
+    alpha_est  = np.linspace(0.25,1, 2)
+    theta_est  = np.linspace(0,np.pi/2,2)
+    sigma2_est = [true_sigma2]
 
     M_estimated = glrt_classification(received_signal, alphabet, alpha_est, theta_est, sigma2_est)
 
@@ -74,7 +79,6 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
 
         plt.scatter(received_signal.real, received_signal.imag, color='blue', alpha=0.5, label=f'Symboles reçus\n Estimé: {M_estimated}')
         plt.scatter(signal.real,signal.imag,color='red', marker='x', label=f'Symboles idéaux {Mod_true} \nalpha:{true_alpha}\ntheta:{true_theta}\nsigma2:{true_sigma2}')
-        #plt.scatter(qam_Alphabet["64QAM"].real,qam_Alphabet["64QAM"].imag,color='green', marker='o',alpha=0.8, label=f'Alphabet')
 
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.axhline(0, color='black', linewidth=1)
@@ -93,7 +97,8 @@ def test_GLRT(Mod_true, N, SNR_dB,alphabet, plots = False):
         return False
 
 def taux_erreur(Ms_true,  SNRs_dB, N_echantillons, N_test, alphabet):
-    plt.figure(dpi=600)
+    # plt.figure(dpi=300)
+    plt.figure()
     total = time()
     print("Started")
     for m_test in Ms_true :
@@ -118,7 +123,7 @@ def taux_erreur(Ms_true,  SNRs_dB, N_echantillons, N_test, alphabet):
     
     plt.xlabel("SNR (dB)")
     plt.ylabel("Pcc %")
-    plt.title(f"Taux de réussite de classification (Pcc) en fonction du SNR (unknown fading)")
+    plt.title(f"Taux de réussite de classification (Pcc) en fonction du SNR (no fading)")
     plt.legend()
     plt.grid()
     print(f'Total execution time : {(time()-total)/60} min')
@@ -129,8 +134,11 @@ if __name__ == "__main__":
     M_true = "16QAM"  
     Ne = 500  # Nombre d'échantillon
     SNR_dB = 16
-    #a = test_GLRT(M_true, Ne, SNR_dB,ALPHABET, True)
+    # a = test_GLRT(M_true, Ne, SNR_dB,ALPHABET, True)
     # print(a)
 
-    taux_erreur(MODLIST, [i for i in range(-20,21,2)], Ne, 100, ALPHABET)
+    #taux_erreur(MODLIST, [i for i in range(-20,21,2)], Ne, 150, ALPHABET)
+    taux_erreur(psk_Mod_list, [i for i in range(-20,21,2)], Ne, 200, pskAlphabet)
+    # taux_erreur(QAM_Mod_list, [i for i in range(-20,21,2)], Ne, 200, qam_Alphabet)
+
     plt.show()
